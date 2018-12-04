@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Curve Builder</title>
+    <script src="curve-builder.js" defer></script>
+    <style>
+    body {
+      display: flex;
+      flex-direction: row;
+      margin: 0;
+      padding: 0;
+    }
+
+    .toolbar {
+      width: 80px;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .toolbar button {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 4px;
+      border: 1px solid #ddd;
+      background: white;
+    }
+
+    .toolbar button.selected {
+      background: rgb(179, 211, 244);
+    }
+
+    .toolbar button[disabled] {
+      opacity: 0.5;
+    }
+
+    .toolbar button:hover:not(.selected):not([disabled]) {
+      cursor: pointer;
+      background: #f8f8f8;
+    }
+
+    .editor {
+      flex-grow: 1;
+    }
+
+    .path {
+      fill: transparent;
+      stroke: black;
+      pointer-events: none;
+    }
+
+    .edge {
+      pointer-events: stroke;
+      cursor: pointer;
+    }
+
+    .node {
+      stroke: rgb(47, 150, 179);
+      fill: rgb(179, 211, 244);
+      pointer-events: fill;
+      cursor: pointer;
+    }
+
+    .end .node {
+      stroke: rgb(47, 179, 112);
+      fill: rgb(179, 244, 187);
+    }
+
+    .focus {
+      stroke: rgb(12, 177, 223);
+      fill: transparent;
+      pointer-events: none;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="toolbar" class="toolbar"></div>
+    <svg id="svg" class="editor"></svg>
+  </body>
+</html>
