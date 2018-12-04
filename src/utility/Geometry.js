@@ -58,6 +58,9 @@ export class Line {
   }
 
   static radial(m, { x, y }) {
+    if (Math.abs(m) === Infinity) {
+      return new Line(Infinity, x);
+    }
     const b = y - m * x;
     return new Line(m, b);
   }
