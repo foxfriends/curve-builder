@@ -25,53 +25,16 @@ export class Node {
   get point() { return new Point(this.x, this.y); }
 
   render(group) {
-    const circle = maybe(group.querySelector('.node')).valueOrElse(() => {
-      const circle = createElement('circle')
+    maybe(group.querySelector('.node'))
+      .orElse(() => group
+        ::createElement('circle')
         ::setAttribute('r', 4)
-        ::setAttribute('class', 'node');
-      group.appendChild(circle);
-      return circle;
-    });
-
-    circle
-      ::setAttribute('cx', this.x)
-      ::setAttribute('cy', this.y);
-
-    const controlNodes = group.querySelectorAll('.control');
-    maybe(this.control1)
-      ::filter(point => !point.equals(this.point))
-      ::collect(Option)
-      .match({
-        None: () => controlNodes::nth(0)::forEach(λ.remove()),
-        Some: ({ x, y }) => controlNodes::nth(0)
-          .valueOrElse(() => {
-            const circle = createElement('circle')
-              ::setAttribute('r', 4)
-              ::setAttribute('class', 'control');
-            group.appendChild(circle);
-            return circle;
-          })
-          ::setAttribute('cx', x)
-          ::setAttribute('cy', y)
-      });
-
-    const control2 = maybe(group.querySelectorAll('.control')[1])
-    maybe(this.control2)
-      ::filter(point => !point.equals(this.point))
-      ::collect(Option)
-      .match({
-        None: () => controlNodes::nth(1)::forEach(λ.remove()),
-        Some: ({ x, y }) => controlNodes::nth(1)
-          .valueOrElse(() => {
-            const circle = createElement('circle')
-              ::setAttribute('r', 4)
-              ::setAttribute('class', 'control');
-            group.appendChild(circle);
-            return circle;
-          })
-          ::setAttribute('cx', x)
-          ::setAttribute('cy', y)
-      });
+        ::setAttribute('class', 'node')
+      )
+      ::forEach(circle => circle
+        ::setAttribute('cx', this.x)
+        ::setAttribute('cy', this.y)
+      );
   }
 }
 
@@ -81,8 +44,6 @@ export class Move extends Node {
   }
 
   move({ x, y }) { return new Move(x, y); }
-  get control1() { return this.point; }
-  get control2() { return this.point; }
   get x() { return this[POINTS][0]; }
   get y() { return this[POINTS][1]; }
 }
@@ -127,7 +88,6 @@ export class Quadratic extends Node {
   }
 
   move({ x, y }) { return new Quadratic(...this.control1, x, y); }
-
   get control1() { return new Point(this[POINTS][0], this[POINTS][1]); }
   get control2() { return this.control1; }
   get x() { return this[POINTS][2]; }

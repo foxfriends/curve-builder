@@ -1,4 +1,4 @@
-import { map, mapWith, flatMap, filter, filterMap, forEach, nth, find, findIndex, collect } from '../utility/Iterator';
+import { map, mapWith, flatMap, filter, filterMap, forEach, extend, nth, find, findIndex, collect } from '../utility/Iterator';
 import { createElement, setAttribute } from '../utility/Svg';
 import { _, λ } from '../utility/Keypath';
 import { Option, maybe, None, Some } from '../utility/Option';
@@ -200,41 +200,27 @@ export class World {
   }
 
   render(svg) {
+    const focusContainer = maybe(svg.querySelector('.focus'));
+    this.pathFocus.and(this.nodeFocus).match({
+      None: () => focusContainer::forEach(λ.remove()),
+      Some: ([path, node]) => focusContainer
+        .orElse(() => svg
+          ::createElement('g')
+          ::setAttribute('class', 'focus')
+        )
+        ::forEach(container => path.renderFocus(container, node))
+    });
+
     const paths = svg.querySelectorAll(':scope > .path');
     paths
       ::filter(element => !this[PATHS].find(path => path.id === element.id))
       ::forEach(λ.remove());
     this[PATHS]
-      ::mapWith(path => paths::find(element => element.id === path.id).valueOrElse(() => {
-        const group = createElement('g')
-          ::setAttribute('id', path.id)
-          ::setAttribute('class', 'path');
-        svg.appendChild(group);
-        return group;
-      }))
+      ::mapWith(path => paths::find(element => element.id === path.id).valueOrElse(() => svg
+        ::createElement('g')
+        ::setAttribute('id', path.id)
+        ::setAttribute('class', 'path')
+      ))
       ::forEach(([path, element]) => path.render(element));
-
-    const nodeFocusElement = maybe(svg.querySelector('#node-focus'));
-
-    this.pathFocus.match({
-      None: () => nodeFocusElement::forEach(λ.remove()),
-      Some: (path) => {
-        this.nodeFocus
-          ::map(_.point)
-          ::forEach(({ x, y }) => {
-            const element = nodeFocusElement.valueOrElse(() => {
-              const element = createElement('circle')
-                ::setAttribute('id', 'node-focus')
-                ::setAttribute('class', 'focus')
-                ::setAttribute('r', 8);
-              svg.appendChild(element);
-              return element;
-            });
-            element
-              ::setAttribute('cx', x)
-              ::setAttribute('cy', y);
-          });
-      }
-    });
   }
 }

@@ -22,6 +22,16 @@ export function chain(...others) {
   return [this, ...others]::flatten();
 }
 
+export function * extend(length, extender) {
+  for (const element of this) {
+    yield element;
+    --length;
+  }
+  while (length --> 0) {
+    yield extender;
+  }
+}
+
 // Operators
 
 export function * flatMap(transform) {

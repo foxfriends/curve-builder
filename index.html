@@ -73,9 +73,35 @@
     }
 
     .focus {
+      z-index: -1;
+    }
+
+    .focus .highlight {
       stroke: rgb(12, 177, 223);
       fill: transparent;
       pointer-events: none;
+    }
+
+    .focus .control.primary {
+      fill: rgb(226, 148, 148);
+      stroke: rgb(208, 113, 113);
+      pointer-events: fill;
+      cursor: pointer;
+    }
+
+    .focus .line {
+      stroke: rgb(111, 111, 111);
+      fill: transparent;
+      opacity: 0.5;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .focus .control.secondary {
+      stroke: rgb(111, 111, 111);
+      fill: white;
+      pointer-events: none;
+      opacity: 0.5;
     }
     </style>
   </head>

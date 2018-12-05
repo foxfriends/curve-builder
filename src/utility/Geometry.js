@@ -41,6 +41,10 @@ export class Point {
     return this.x === x && this.y === y;
   }
 
+  toString() {
+    return `(${this.x}, ${this.y})`;
+  }
+
   *[Symbol.iterator]() {
     yield this.x;
     yield this.y;
@@ -99,6 +103,10 @@ export class Line {
     const ratio = other.m / this.m;
     const y = (other.b - ratio * this.b) / (1 - ratio);
     return new Point(this.inverse(y), y);
+  }
+
+  toString() {
+    return `y = ${this.m} * x + ${this.b}`;
   }
 
   *[Symbol.iterator]() {

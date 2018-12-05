@@ -2,7 +2,7 @@ import { of, zip, chain, map, mapWith, enumerate, filter, forEach, skip, last, f
 import { createElement, setAttribute, toggleClass } from '../utility/Svg';
 import { _, λ } from '../utility/Keypath';
 import { Option, None, Some, maybe } from '../utility/Option';
-import { Node, Move, Line } from './Node';
+import { Node, Move, Line, ContinueCubic, Cubic, ContinueQuadratic, Quadratic } from './Node';
 import { Edge } from './Edge';
 import { Point } from '../utility/Geometry';
 
@@ -49,15 +49,27 @@ export class Path {
     return this[NODES].length;
   }
 
-  // firstControlPoint(index) {
-  //   return maybe(this[NODES][index].control1)
-  //     .valueOrElse(() => this.previousControlPoint(index + 1))
-  // }
+  firstControlPoint(index) {
+    return maybe(this[NODES][index].control1)
+      .valueOrElse(() => this.nextControlPoint(index - 1))
+  }
 
   secondControlPoint(index) {
-    // eventually converges: the first node has the trivial `control2` point.
+    if (index <= 0) {
+      return this[NODES][0].point;
+    }
     return maybe(this[NODES][index].control2)
       .valueOrElse(() => this.nextControlPoint(index - 1));
+  }
+
+  previousControlPoint(node) {
+    let index = node;
+    if (typeof node === 'number') {
+      node = this[NODES][index];
+    } else {
+      index = this[NODES].indexOf(node);
+    }
+    return this.firstControlPoint(index).reflectOver(node.point);
   }
 
   nextControlPoint(node) {
@@ -183,12 +195,10 @@ export class Path {
   }
 
   render(group) {
-    const path = maybe(group.querySelector('.path')).valueOrElse(() => {
-      const path = createElement('path')
-        ::setAttribute('class', 'path');
-      group.appendChild(path);
-      return path;
-    });
+    const path = maybe(group.querySelector('.path')).valueOrElse(() => group
+      ::createElement('path')
+      ::setAttribute('class', 'path')
+    );
     path::setAttribute('d', this.toString());
 
     const nodes = group.querySelectorAll(':scope > .node');
@@ -196,16 +206,127 @@ export class Path {
       ::filter(element => !this.nodes::contains(node => node.id === element.id))
       ::forEach(λ.remove());
     this.nodes
-      ::mapWith(node => nodes::find(element => element.id === node.id).valueOrElse(() => {
-        const element = createElement('g')
-          ::setAttribute('id', node.id)
-          ::setAttribute('class', 'node');
-        group.appendChild(element);
-        return element;
-      }))
+      ::mapWith(node => nodes::find(element => element.id === node.id).valueOrElse(() => group
+        ::createElement('g')
+        ::setAttribute('id', node.id)
+        ::setAttribute('class', 'node')
+      ))
       ::forEach(([node, element]) => {
         node.render(element);
         element.classList.toggle('end', this.isEnd(node));
       });
+  }
+
+  renderFocus(element, node) {
+    const index = this[NODES].indexOf(node);
+    const previous = maybe(this[NODES][index - 1]);
+    const next = maybe(this[NODES][index + 1]);
+
+    maybe(element.querySelector(':scope > .highlight'))
+      .orElse(() => element
+        ::createElement('circle')
+        ::setAttribute('r', 8)
+        ::setAttribute('class', 'highlight')
+      )
+      ::forEach(element => element
+        ::setAttribute('cx', node.x)
+        ::setAttribute('cy', node.y)
+      );
+
+    const previousControlElement = maybe(element.querySelector(':scope > .control.previous'));
+    const nextControlElement = maybe(element.querySelector(':scope > .control.next'));
+    const createControl = className => () => element::createElement('g')::setAttribute('class', `control ${className}`);
+
+    switch (node.constructor) {
+    case ContinueCubic:
+    case ContinueQuadratic:
+      this.renderControl(
+        previousControlElement.valueOrElse(createControl('previous')),
+        this.firstControlPoint(index),
+        previous.valueOf().point,
+        true,
+      );
+      break;
+    case Cubic:
+    case Quadratic:
+      this.renderControl(
+        previousControlElement.valueOrElse(createControl('previous')),
+        this.firstControlPoint(index),
+        previous.valueOf().point,
+      );
+      break;
+    default:
+      previousControlElement::forEach(λ.remove());
+    }
+
+    switch (node.constructor) {
+    case ContinueCubic:
+    case ContinueQuadratic:
+    case Cubic:
+    case Quadratic:
+      this.renderControl(
+        nextControlElement.valueOrElse(createControl('next')),
+        this.secondControlPoint(index),
+        node.point,
+        next
+          ::map(next => next instanceof ContinueQuadratic || next instanceof ContinueCubic)
+          ::collect(Option)
+          .valueOr(false),
+      );
+      break;
+    default:
+      nextControlElement::forEach(λ.remove());
+    }
+  }
+
+  renderControl(element, control, anchor, reflect = false) {
+    maybe(element.querySelector(':scope > .line.primary'))
+      .orElse(() => element
+        ::createElement('line')
+        ::setAttribute('class', 'line primary')
+      )
+      ::forEach(line => line
+        ::setAttribute('x1', control.x)
+        ::setAttribute('y1', control.y)
+        ::setAttribute('x2', anchor.x)
+        ::setAttribute('y2', anchor.y)
+      );
+    maybe(element.querySelector(':scope > .control.primary'))
+      .orElse(() => element
+        ::createElement('circle')
+        ::setAttribute('r', 4)
+        ::setAttribute('class', 'control primary')
+      )
+      ::forEach(circle => circle
+        ::setAttribute('cx', control.x)
+        ::setAttribute('cy', control.y)
+      );
+    if (reflect) {
+      const reflected = control.reflectOver(anchor);
+      maybe(element.querySelector(':scope > .line.secondary'))
+        .orElse(() => element
+          ::createElement('line')
+          ::setAttribute('class', 'line secondary')
+        )
+        ::forEach(line => line
+          ::setAttribute('x1', reflected.x)
+          ::setAttribute('y1', reflected.y)
+          ::setAttribute('x2', anchor.x)
+          ::setAttribute('y2', anchor.y)
+        );
+      maybe(element.querySelector(':scope > .control.secondary'))
+        .orElse(() => element
+          ::createElement('circle')
+          ::setAttribute('r', 4)
+          ::setAttribute('class', 'control secondary')
+        )
+        ::forEach(circle => circle
+          ::setAttribute('cx', reflected.x)
+          ::setAttribute('cy', reflected.y)
+        );
+    } else {
+      element.querySelectorAll(':scope > .secondary')
+        ::forEach(λ.remove())
+    }
   }
 }
