@@ -5,7 +5,16 @@ import { Option, maybe, None, Some } from '../utility/Option';
 import { Line, Move } from './Node';
 import { Path } from './Path';
 
-const [PATHS, PATH_FOCUS, NODE_FOCUS, EDGE_FOCUS, PATH_ACTIVE, NODE_ACTIVE, EDGE_ACTIVE] = Symbol.generate();
+const [PATHS, PATH_FOCUS, NODE_FOCUS, EDGE_FOCUS, PATH_ACTIVE, NODE_ACTIVE, EDGE_ACTIVE, CONTROL_ACTIVE] = Symbol.generate(
+  'PATHS',
+  'PATH_FOCUS',
+  'NODE_FOCUS',
+  'EDGE_FOCUS',
+  'PATH_ACTIVE',
+  'NODE_ACTIVE',
+  'EDGE_ACTIVE',
+  'CONTROL_ACTIVE',
+);
 
 export class World {
   constructor(basis = None) {
@@ -18,6 +27,7 @@ export class World {
         this[PATH_ACTIVE] = None;
         this[NODE_ACTIVE] = None;
         this[EDGE_ACTIVE] = None;
+        this[CONTROL_ACTIVE] = None;
       },
       Some: (basis) => {
         this[PATHS] = [...basis[PATHS]];
@@ -27,6 +37,7 @@ export class World {
         this[PATH_ACTIVE] = basis[PATH_ACTIVE];
         this[NODE_ACTIVE] = basis[NODE_ACTIVE];
         this[EDGE_ACTIVE] = basis[EDGE_ACTIVE];
+        this[CONTROL_ACTIVE] = basis[CONTROL_ACTIVE];
       }
     });
   }
@@ -124,7 +135,10 @@ export class World {
     return this.nodeActive.and(this.pathActive)
       ::map(([node, path]) => {
         const clone = new World(Some(this));
-        clone[PATHS][clone[PATH_ACTIVE].valueOf()] = path.moveNode(node, x, y);
+        clone[PATHS][clone[PATH_ACTIVE].valueOf()] = this[CONTROL_ACTIVE].match({
+          None: () => path.moveNode(node, x, y),
+          Some: (control) => path.moveControl(node, control, x, y),
+        });
         return clone;
       })
       ::collect(Option)
@@ -169,17 +183,24 @@ export class World {
       .valueOr(this);
   }
 
-  activate(id) {
-    const clone = new World(Some(this.focus(id)));
+  activate(id = None, control = None) {
+    if (id.or(control).isNone) {
+      return this;
+    }
+    const clone = id.match({
+      None: () => new World(Some(this)),
+      Some: (id) => new World(Some(this.focus(id))),
+    });
     clone[PATH_ACTIVE] = clone[PATH_FOCUS];
     clone[NODE_ACTIVE] = clone[NODE_FOCUS];
     clone[EDGE_ACTIVE] = clone[EDGE_FOCUS];
+    clone[CONTROL_ACTIVE] = control;
     return clone;
   }
 
   blur() {
     if (this[PATH_FOCUS].or(this[NODE_FOCUS]).or(this[EDGE_FOCUS]).isSome) {
-      const clone = new World(Some(this));
+      const clone = this.deactivate();
       clone[PATH_FOCUS] = None;
       clone[NODE_FOCUS] = None;
       clone[EDGE_FOCUS] = None;
@@ -189,11 +210,12 @@ export class World {
   }
 
   deactivate() {
-    if (this[PATH_ACTIVE].or(this[NODE_ACTIVE]).or(this[EDGE_ACTIVE]).isSome) {
+    if (this[PATH_ACTIVE].or(this[NODE_ACTIVE]).or(this[EDGE_ACTIVE]).or(this[CONTROL_ACTIVE]).isSome) {
       const clone = new World(Some(this));
       clone[PATH_ACTIVE] = None;
       clone[NODE_ACTIVE] = None;
       clone[EDGE_ACTIVE] = None;
+      clone[CONTROL_ACTIVE] = None;
       return clone;
     }
     return this;

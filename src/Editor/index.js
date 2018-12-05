@@ -10,11 +10,12 @@ import {
 import { of, chain, map, forEach, collect } from '../utility/Iterator';
 import { λ } from '../utility/Keypath';
 import { Mouse, Key } from '../utility/Event';
-import { World } from './World';
-import { Move, Line, Cubic, ContinueCubic, Quadratic, ContinueQuadratic, Arc } from './Node';
-import { StateStack } from './StateStack';
-import { Button } from '../Toolbar/Button';
 import { Point } from '../utility/Geometry';
+import { None, Some } from '../utility/Option';
+import { World } from './World';
+import { StateStack } from './StateStack';
+import { Move, Line, Cubic, ContinueCubic, Quadratic, ContinueQuadratic, Arc } from './Node';
+import { Button } from '../Toolbar/Button';
 
 const [SVG, STATE, TOOL] = Symbol.generate('SVG', 'STATE', 'TOOL');
 
@@ -163,8 +164,9 @@ export class Editor {
             let control = path.isEnd(nodeFocus) ? path.nextControlPoint(nodeFocus) : path.previousControlPoint(nodeFocus);
             let node;
             switch (this.tool) {
-              case Line:
               case Arc:
+                break;
+              case Line:
               case ContinueQuadratic:
                 node = new this.tool(...point);
                 break;
@@ -179,11 +181,21 @@ export class Editor {
             }
             return transient(world.appendNode(node));
           }
+          let control = None;
           while (target && !target.id) {
+            if (target.classList.contains('control')) {
+              if (target.classList.contains('previous')) {
+                control = Some(1);
+              } else if (target.classList.contains('next')) {
+                control = Some(2);
+              }
+            }
             target = target.parentNode;
           }
-          if (target) {
-            return transient(world.activate(target.id));
+          if (target !== svg) {
+            return transient(world.activate(Some(target.id)));
+          } else if (control.isSome) {
+            return transient(world.activate(None, control));
           }
           break;
       }

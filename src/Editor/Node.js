@@ -23,6 +23,8 @@ export class Node {
   }
 
   get point() { return new Point(this.x, this.y); }
+  moveControl1() { return this; }
+  moveControl2() { return this; }
 
   render(group) {
     maybe(group.querySelector('.node'))
@@ -65,6 +67,9 @@ export class Cubic extends Node {
   }
 
   move({ x, y }) { return new Cubic(...this.control1, ...this.control2.follow(this.point, new Point(x, y)), x, y); }
+  moveControl1({ x, y }) { return new Cubic(x, y, ...this.control2, ...this.point); }
+  moveControl2({ x, y }) { return new Cubic(...this.control1, x, y, ...this.point); }
+  get control2() { return this.point; }
   get control1() { return new Point(this[POINTS][0], this[POINTS][1]); }
   get control2() { return new Point(this[POINTS][2], this[POINTS][3]); }
   get x() { return this[POINTS][4]; }
@@ -77,6 +82,7 @@ export class ContinueCubic extends Node {
   }
 
   move({ x, y }) { return new ContinueCubic(...this.control2.follow(this.point, new Point(x, y)), x, y); }
+  moveControl2({ x, y }) { return new ContinueCubic(x, y, ...this.point); }
   get control2() { return new Point(this[POINTS][0], this[POINTS][1]); }
   get x() { return this[POINTS][2]; }
   get y() { return this[POINTS][3]; }
@@ -90,6 +96,8 @@ export class Quadratic extends Node {
   move({ x, y }) { return new Quadratic(...this.control1, x, y); }
   get control1() { return new Point(this[POINTS][0], this[POINTS][1]); }
   get control2() { return this.control1; }
+  moveControl1({ x, y }) { return new Quadratic(x, y, ...this.point); }
+  moveControl2(point) { return this.moveControl1(point) }
   get x() { return this[POINTS][2]; }
   get y() { return this[POINTS][3]; }
 }

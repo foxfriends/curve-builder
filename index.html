@@ -82,11 +82,18 @@
       pointer-events: none;
     }
 
-    .focus .control.primary {
+    .focus .control.owned {
       fill: rgb(226, 148, 148);
       stroke: rgb(208, 113, 113);
       pointer-events: fill;
       cursor: pointer;
+    }
+
+    .focus .control:not(.owned) {
+      stroke: rgb(111, 111, 111);
+      fill: white;
+      pointer-events: none;
+      opacity: 0.5;
     }
 
     .focus .line {
@@ -95,13 +102,6 @@
       opacity: 0.5;
       z-index: -1;
       pointer-events: none;
-    }
-
-    .focus .control.secondary {
-      stroke: rgb(111, 111, 111);
-      fill: white;
-      pointer-events: none;
-      opacity: 0.5;
     }
     </style>
   </head>

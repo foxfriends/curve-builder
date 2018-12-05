@@ -12,3 +12,8 @@ export function setAttribute(name, value) {
   this.setAttributeNS(null, name, value);
   return this;
 }
+
+export function toggleClass(name, force) {
+  this.classList.toggle(name, force);
+  return this;
+}

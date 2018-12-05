@@ -1,4 +1,4 @@
-import { of, zip, chain, map, mapWith, enumerate, filter, forEach, skip, last, find, contains, findIndex, collect } from '../utility/Iterator';
+import { of, zip, chain, map, flatMap, mapWith, enumerate, filter, forEach, skip, last, find, contains, findIndex, collect } from '../utility/Iterator';
 import { createElement, setAttribute, toggleClass } from '../utility/Svg';
 import { _, λ } from '../utility/Keypath';
 import { Option, None, Some, maybe } from '../utility/Option';
@@ -130,6 +130,23 @@ export class Path {
       .valueOr(this);
   }
 
+  moveControl(node, control, x, y) {
+    return maybe(this[NODES].indexOf(node))
+      ::flatMap(index => {
+        const clone = new Path(Some(this));
+        if (control === 1 && node.control1) {
+          clone[NODES][index] = node.moveControl1(new Point(x, y));
+          return Some(clone);
+        } else if (control === 2 && node.control2) {
+          clone[NODES][index] = node.moveControl2(new Point(x, y));
+          return Some(clone);
+        }
+        return None;
+      })
+      ::collect(Option)
+      .valueOr(this);
+  }
+
   deleteNode(node) {
     return maybe(this[NODES].indexOf(node))
       ::map(index => {
@@ -245,6 +262,7 @@ export class Path {
         this.firstControlPoint(index),
         previous.valueOf().point,
         true,
+        false,
       );
       break;
     case Cubic:
@@ -272,6 +290,7 @@ export class Path {
           ::map(next => next instanceof ContinueQuadratic || next instanceof ContinueCubic)
           ::collect(Option)
           .valueOr(false),
+        !!node.control2,
       );
       break;
     default:
@@ -279,7 +298,7 @@ export class Path {
     }
   }
 
-  renderControl(element, control, anchor, reflect = false) {
+  renderControl(element, control, anchor, reflect = false, owned = true) {
     maybe(element.querySelector(':scope > .line.primary'))
       .orElse(() => element
         ::createElement('line')
@@ -295,11 +314,12 @@ export class Path {
       .orElse(() => element
         ::createElement('circle')
         ::setAttribute('r', 4)
-        ::setAttribute('class', 'control primary')
+        ::setAttribute('class', `control primary`)
       )
       ::forEach(circle => circle
         ::setAttribute('cx', control.x)
         ::setAttribute('cy', control.y)
+        ::toggleClass('owned', owned)
       );
     if (reflect) {
       const reflected = control.reflectOver(anchor);
