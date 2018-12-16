@@ -7,7 +7,13 @@ module.exports = {
     filename: 'curve-builder.js',
   },
   module: {
-    rules: [{ test: /\.js$/, use: ['babel-loader'] }],
+    rules: [
+      { test: /\.js$/, use: ['babel-loader'] },
+      { test: /\.js\.(md|tex|html)$/, use: ['babel-loader', 'outline-loader'] },
+    ],
+  },
+  resolve: {
+    extensions: ['.js', '.js.md', '.js.tex', '.js.html'],
   },
   devtool: 'cheap-module-eval-source-map',
 };

@@ -54,6 +54,12 @@ export class Option {
     return this.isSome ? Some(this[ELEMENT]) : None();
   }
 
+  equals(other) {
+    if (this.isNone && other.isNone) { return true; }
+    if (this.isSome && other.isSome && this[ELEMENT] === other[ELEMENT]) { return true; }
+    return false;
+  }
+
   toString() {
     return this.match({
       None: () => 'None',

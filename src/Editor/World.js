@@ -200,7 +200,7 @@ export class World {
 
   blur() {
     if (this[PATH_FOCUS].or(this[NODE_FOCUS]).or(this[EDGE_FOCUS]).isSome) {
-      const clone = this.deactivate();
+      const clone = new World(Some(this.deactivate()));
       clone[PATH_FOCUS] = None;
       clone[NODE_FOCUS] = None;
       clone[EDGE_FOCUS] = None;
