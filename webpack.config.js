@@ -9,7 +9,7 @@ module.exports = {
   module: {
     rules: [
       { test: /\.js$/, use: ['babel-loader'] },
-      { test: /\.js\.(md|tex|html)$/, use: ['babel-loader', 'outline-loader'] },
+      { test: /\.js\.(md|tex|html)$/, use: ['babel-loader', '@oinkiguana/outline-loader'] },
     ],
   },
   resolve: {
